@@ -5,7 +5,7 @@ from gdpc import geometry as geo
 
 from utils import get_building_at, str_to_file
 
-from Builds import build, SIMPLE_HOUSE
+from buildings.Small_house import Small_house
 
 def place_block():
     ED.placeBlock((0,100,0), Block("red_concrete"))
@@ -42,8 +42,10 @@ def place_special_blocks():
 
 def main():
     try:
-        # str_to_file(get_building_at((-10,-60, 3), (5, -40, 17)), "simple_house")
-        build(SIMPLE_HOUSE, (STARTX, -60, STARTZ))
+        # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
+
+        house = Small_house((30, -50, 30), 'jungle')
+        house.build()
         print("Done!")
 
     except KeyboardInterrupt: # useful for aborting a run-away program
