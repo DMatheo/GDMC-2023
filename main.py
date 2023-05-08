@@ -40,11 +40,20 @@ def place_special_blocks():
     ED.placeBlock((STARTX + 2, 108, STARTZ), Block("lectern"))
     ED.placeBlock((STARTX + 3, 108, STARTZ), Block("oak_door"))
 
+def clear_area():
+    geo.placeCuboid(ED, (STARTX, 70, STARTZ), (STARTX + 60, 120, STARTZ + 60), Block("air"))
+
 def main():
     try:
         # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
-
-        house = Small_house((30, -50, 30), 'jungle')
+        clear_area()
+        house = Small_house((STARTX + 0, STARTY + 75, STARTZ + 0), 'jungle', 'north')
+        house.build()
+        house = Small_house((STARTX + 25, STARTY + 75, STARTZ + 0), 'jungle', 'south')
+        house.build()
+        house = Small_house((STARTX + 0, STARTY + 75, STARTZ + 25), 'jungle', 'east')
+        house.build()
+        house = Small_house((STARTX + 25, STARTY + 75, STARTZ + 25), 'jungle', 'west')
         house.build()
         print("Done!")
 

@@ -6,9 +6,9 @@ from constants import FLOWERS
 # add random flowers, random mossy and cracked stone, random leaves disposition, wood used = wood near the sawmill
 class Small_house(Building):
 
-    def __init__(self, coord, wood_type):
+    def __init__(self, coord, wood_type, facing):
         self.wood_type = wood_type
-        super().__init__("Small_house", coord, (15, 13, 12), self.get_blocks())
+        super().__init__("Small_house", coord, (15, 13, 12), self.get_blocks(), facing)
 
     def __str__(self):
         return f'{self.wood_type} {self.name}'
