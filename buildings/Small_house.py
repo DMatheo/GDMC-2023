@@ -6,13 +6,16 @@ from constants import FLOWERS
 # add random flowers, random mossy and cracked stone, random leaves disposition, wood used = wood near the sawmill
 class Small_house(Building):
 
+    NORTH_SOUTH_FACING_DIMENSIONS = (16, 13, 13)
+    EAST_WEST_FACING_DIMENSIONS = (13, 13, 16)
+
     def __init__(self, coord, wood_type, facing):
         self.wood_type = wood_type
-        super().__init__("Small_house", coord, (15, 13, 12), self.get_blocks(), facing)
+        super().__init__("Small_house", coord, (16, 13, 13), self.get_blocks(), facing)
 
     def __str__(self):
         return f'{self.wood_type} {self.name}'
-        
+
     def get_blocks(self):
         return (
             (

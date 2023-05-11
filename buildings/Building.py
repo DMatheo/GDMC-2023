@@ -2,6 +2,8 @@ from gdpc import Block
 
 from constants import ED
 
+import random
+
 # TO DO : needed ressources
 class Building:
 
@@ -72,16 +74,49 @@ class Building:
 
     def __str__(self):
         return self.name
+
+    def fill_column(self, x, y_start, z):
+        counter = y_start
+        block_id = ED.getBlock((x, counter, z)).id
+        while not any(block_type in block_id for block_type in ("dirt", "stone", "sand", "terracotta", "grass_block")):
+            counter -= 1
+            block_id = ED.getBlock((x, counter, z)).id
+        for y in range(counter, y_start + 1):
+            ED.placeBlock((x, y, z), Block(block_id))
+
     
     def fill_empty_space(self):
         x_start, y_start, z_start = self.coord
-        y = y_start - 1
+        x_start -= 1
+        z_start -= 1
+        y_start -= 1
         for x in range(x_start, x_start + self.dimensions[0] + 1):
             for z in range(z_start, z_start + self.dimensions[2] + 1):
-                while(y > -64 and ED.getBlock((x, y, z)).id == "minecraft:air"):
-                    ED.placeBlock((x, y, z), Block("stone_bricks"))
-                    y -= 1
-                y = y_start - 1
+                self.fill_column(x, y_start, z)
+
+        # make the filling looks more natural
+        for x_details in (x_start -1, x_start + self.dimensions[0] + 1):
+            z_details_start = z_start
+            z_details_end = z_start + self.dimensions[2]
+            while random.randint(0,10) < 8:
+                z_details_start += 1
+            while random.randint(0,10) < 8:
+                z_details_end -= 1
+            for z_details in range(z_details_start, z_details_end):
+                self.fill_column(x_details, y_start, z_details)
+
+        for z_details in (z_start -1, z_start + self.dimensions[2] + 1):
+            x_details_start = x_start
+            x_details_end = x_start + self.dimensions[0]
+            while random.randint(0,10) < 8:
+                x_details_start += 1
+            while random.randint(0,10) < 8:
+                x_details_end -= 1
+            for x_details in range(x_details_start, x_details_end):
+                self.fill_column(x_details, y_start, z_details)
+        
+
+        
 
     def build(self):
         self.fill_empty_space()
@@ -98,3 +133,6 @@ class Building:
         Abstract method to be implemented in child classes, returns a list of tuples (relative_coord, block_name, block_states)
         """
         pass
+
+    def get_dimensions(self):
+        return self.dimensions

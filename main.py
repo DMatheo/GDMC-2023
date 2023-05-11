@@ -5,7 +5,7 @@ from gdpc import geometry as geo
 
 from utils import get_building_at, str_to_file
 
-from buildings.Small_house import Small_house
+from settlements.Surface import Surface
 
 def place_block():
     ED.placeBlock((0,100,0), Block("red_concrete"))
@@ -46,16 +46,10 @@ def clear_area():
 def main():
     try:
         # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
-        clear_area()
-        house = Small_house((STARTX + 0, STARTY + 75, STARTZ + 0), 'jungle', 'north')
-        house.build()
-        house = Small_house((STARTX + 25, STARTY + 75, STARTZ + 0), 'jungle', 'south')
-        house.build()
-        house = Small_house((STARTX + 0, STARTY + 75, STARTZ + 25), 'jungle', 'east')
-        house.build()
-        house = Small_house((STARTX + 25, STARTY + 75, STARTZ + 25), 'jungle', 'west')
-        house.build()
-        print("Done!")
+        village = Surface("Village", (STARTX, STARTZ), (100, 100))
+        village.settle()
+
+        
 
     except KeyboardInterrupt: # useful for aborting a run-away program
         print("Pressed Ctrl-C to kill program.")
