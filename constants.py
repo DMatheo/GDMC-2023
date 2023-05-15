@@ -1,10 +1,9 @@
 import logging
 import pandas as pd
-import numpy as np
 import time
-
+from Worldmap import Worldmap
+from Cavemap import Cavemap
 from termcolor import colored
-
 from gdpc import Editor
 
 logging.basicConfig(format=colored(
@@ -39,38 +38,6 @@ FLOWERS = (
 
 ROADHEIGHT = 0
 
-def getBlocksInSlice(heightmap = None):
-
-    """ 
-    Gets all the blocks in the slice
-    Be warned : this algorithm is costly and should only be called once.
-
-    :type heightmap: List(List(int))
-    :param heightmap: List of List of top Y coordinates
-
-    :return: Dataframe with all blocks in the current slice
-    """
-    #Handmade
-    #data = [{   'x' : ((STARTX // 16) + key.x) * 16 + i % 16,
-    #            'y' : key.y * 16 + (i // 256),
-    #            'z' : ((STARTZ // 16) + key.z) * 16 + (i // 16) % 16,
-    #            'Name': str(section.getBlockStateTagAtIndex(i)["Name"])}    
-    #        for key, section in WORLDSLICE._sections.items() for i in range(len(section.blockStatesBitArray))
-    #        ]
-    
-    #faster, but using copilot...
-    data = np.fromiter(
-        (( ((STARTX // 16) + key.x) * 16 + i % 16, key.y * 16 + (i // 256), ((STARTZ // 16) + key.z) * 16 + (i // 16) % 16, str(section.getBlockStateTagAtIndex(i)["Name"]))    
-        for key, section in WORLDSLICE._sections.items() for i in range(len(section.blockStatesBitArray))),
-        dtype=[('x', int), ('y', int), ('z', int), ('Name', 'U16')],
-        count=-1
-    )
-
-    df = pd.DataFrame.from_records(data)
-    if (heightmap is not None) :
-        df = df[df['z'].isin(heightmap.columns.values.tolist())]
-        df = df[df['x'].isin(heightmap.index.values.tolist())]
-    return df
 
 rough_exec_time = time.time()
 
@@ -84,8 +51,19 @@ print(f"Heightmap took {time.time()-rough_exec_time}")
 
 print("Getting all blocks..")
 rough_exec_time = time.time()
-ALL_BLOCKS = getBlocksInSlice(HEIGHTS)
+WORLD_MAP = Worldmap(STARTX, STARTZ, WORLDSLICE, HEIGHTS)
+ALL_BLOCKS = WORLD_MAP.get_blocks()
 print("All blocks obtained !")
 print(ALL_BLOCKS)
 print(f"All blocks took {time.time() - rough_exec_time}")
 
+print("Getting the cave map...")
+rough_exec_time = time.time()
+CAVE_MAP = Cavemap(HEIGHTS, ALL_BLOCKS)
+ALL_BLOCKS_CAVEMAP = CAVE_MAP.get_blocks()
+print("Cave map obtained !")
+print(ALL_BLOCKS_CAVEMAP)
+print(f"Cave map took {time.time() - rough_exec_time}")
+
+WOOD_TYPE = WORLD_MAP.get_wood_type()
+print(WOOD_TYPE)
