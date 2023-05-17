@@ -25,3 +25,26 @@ FLOWERS = (
     "poppy",
     "dandelion"
 )
+
+GROUND_BLOCKS = (
+    "dirt",
+    "grass_block",
+    "stone",
+    "sand",
+    "terracotta", 
+    "water",
+    "snow_block",
+    "podzol"
+)
+
+DECORATIVE_GROUND_BLOCKS = FLOWERS + (
+    "grass",
+    "snow"
+)
+
+CLIFF_BLOCKS = (
+    "stone",
+    "andesite",
+    "diorite",
+    "cobblestone"
+)
