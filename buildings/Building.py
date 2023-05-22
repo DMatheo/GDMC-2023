@@ -119,15 +119,16 @@ class Building:
         
 
     def build(self):
-        self.fill_empty_space()
+        #self.fill_empty_space()
         for block in self.blocks:
             x, y, z = self.coord
             relative_x, relative_y, relative_z = block[0]
             x += relative_x
             y += relative_y
             z += relative_z
+            print(x, y, z)
             ED.placeBlock((x, y, z), Block(block[1], block[2]))
-    
+        ED.flushBuffer()
     def get_blocks(self):
         """
         Abstract method to be implemented in child classes, returns a list of tuples (relative_coord, block_name, block_states)

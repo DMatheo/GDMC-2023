@@ -9,8 +9,8 @@ from gdpc import geometry as geo
 from gdpc import interface
 
 from utils import calculate_middle, calculate_world_slice_size
-from constants import STARTX, STARTY, STARTZ, LASTX, LASTY, LASTZ, ED, WOOD_TYPE
-from buildings.Building import get_building_at
+from constants import STARTX, STARTY, STARTZ, LASTX, LASTY, LASTZ, ED, WOOD_TYPE, BUILD_AREA, WORLDSLICE, FLOWERS, ROADHEIGHT, HEIGHTS, HEIGHTS_WATER, WORLD_MAP, ALL_BLOCKS, CAVE_MAP, ALL_BLOCKS_CAVEMAP
+from buildings.BuildFile import BuildFile
 
 
 # === STRUCTURE #3
@@ -48,11 +48,34 @@ def getBiomeMap(slideX, slideZ):
     return pd.DataFrame(biomes, columns=['coordinates', 'biomeId'])
     
 
+def build_house_underground():
+    """
+    This function builds a house underground
+    """
+    # Get the best underground sub chunk
+    cavechunk = CAVE_MAP.get_best_theorical_cave().get_best_theorical_cavechunk()
+    coordinates, facing = cavechunk.get_buildable_informations()
+    facing = "north"
+    building = BuildFile("underground_house", coordinates, facing)
+    print("Starting to build...")
+    print(f"Coordinates : {coordinates}")
+    print(cavechunk.getBoundaries())
+    print(cavechunk.takenDirections())
+    print(cavechunk.get_buildable_informations())
+    print(len(cavechunk.blocks))
+    building.build()
+    
+    print("A house has been built underground !")
+    print(f"Coordinates : {coordinates}")
+    cavechunk.update_building(building)
+
+
+
 def main():
     try:
-        #placeFurniture()
-        get_building_at(ED, (STARTX, STARTY, STARTZ), (LASTX, LASTY, LASTZ))
-        #build_building_at(())
+        #start_settlement_underground()
+        build_house_underground()
+        #get_building_at(ED, (STARTX, STARTY, STARTZ), (LASTX, LASTY, LASTZ))
         print("Done!")
 
     except KeyboardInterrupt: # useful for aborting a run-away program

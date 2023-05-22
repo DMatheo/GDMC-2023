@@ -43,8 +43,11 @@ rough_exec_time = time.time()
 
 print("Getting height map..")
 HEIGHTS = pd.DataFrame(WORLDSLICE.heightmaps["MOTION_BLOCKING_NO_LEAVES"])
+HEIGHTS_WATER = pd.DataFrame(WORLDSLICE.heightmaps["OCEAN_FLOOR"])
 HEIGHTS.index = [x for x in range(STARTX, LASTX+1)]
 HEIGHTS.columns = [z for z in range(STARTZ, LASTZ+1)]
+HEIGHTS_WATER.index = HEIGHTS.index
+HEIGHTS_WATER.columns = HEIGHTS.columns
 print("Height map obtained !")
 print(HEIGHTS)
 print(f"Heightmap took {time.time()-rough_exec_time}")
@@ -59,7 +62,7 @@ print(f"All blocks took {time.time() - rough_exec_time}")
 
 print("Getting the cave map...")
 rough_exec_time = time.time()
-CAVE_MAP = Cavemap(HEIGHTS, ALL_BLOCKS)
+CAVE_MAP = Cavemap(ED, HEIGHTS, HEIGHTS_WATER, ALL_BLOCKS)
 ALL_BLOCKS_CAVEMAP = CAVE_MAP.get_blocks()
 print("Cave map obtained !")
 print(ALL_BLOCKS_CAVEMAP)

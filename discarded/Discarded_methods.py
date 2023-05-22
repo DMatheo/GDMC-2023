@@ -100,3 +100,36 @@ def mostCommonWoodType(*slice_sizes):
             
 
     return block
+
+def getlargest():
+            """
+        Gets the caves
+        """
+        #Get largest caves
+        largest_caves, largest_possible_cave = self.__get_largest_caves()
+        if (largest_caves is None or largest_possible_cave is None):
+            print("No caves found !")
+            return
+
+def __get_largest_caves(self):
+        """
+        This function returns a dataframe containing all the largest caves in the world slice, 
+        aswell as Series containing the coordinates of the largest cave
+
+        :rtype: pd.DataFrame, pd.Series
+        :return: The dataframe containing all the largest caves in the world slice,
+        aswell as Series containing the coordinates of the largest cave
+        """
+
+
+        # Changing the column and rows to current x and z, stocking y in lists for each coordinate
+        underground_sequences = self.cave_map_blocks.drop(['Name'], inplace=False, axis=1).groupby(['x', 'z'])['y'].apply(list).reset_index()
+        # Now, for each value of y, I'll apply the largest sequence in a given list of number :
+        underground_sequences['y'] = underground_sequences['y'].apply(get_largest_sequence)
+        # Now, I'll add a column with the length of the sequences, for later use
+        underground_sequences['Length_of_sequence'] = underground_sequences['y'].str.len()
+
+        # Should return :
+        # - 2D map with biggest cave spotted, with top Y and bottom Y, for every X & Z
+        # - Row with the largest cave
+        return underground_sequences, underground_sequences.loc[underground_sequences['Length_of_sequence'].idxmax()]
