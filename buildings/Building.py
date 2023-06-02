@@ -6,23 +6,20 @@ import random
 
 class Building:
 
-    def __init__(self, name, coord, dimensions, blocks, facing):
+    def __init__(self, name, coord, blocks, facing, settlement):
         self.name = name
         self.coord = coord
+        self.settlement = settlement
 
         if facing not in ['north', 'south', 'east', 'west']:
             raise ValueError("facing must be 'north', 'south', 'east' or 'west'")
+            
         self.facing = facing
-
-        if self.facing == 'east' or self.facing == 'west':
-            self.dimensions = (dimensions[2], dimensions[1], dimensions[0])
-        else:
-            self.dimensions = dimensions
 
         new_blocks = []
         if self.facing == 'south':
             for block in blocks:
-                new_block = ((block[0][0], block[0][1], self.dimensions[2] - block[0][2]), block[1], block[2])
+                new_block = ((block[0][0], block[0][1], self.DIMENSIONS["south"][2] - block[0][2]), block[1], block[2])
                 if 'hinge' in block[2]:
                     if block[2]['hinge'] == 'left':
                         new_block[2]['hinge'] = 'right'
@@ -54,7 +51,7 @@ class Building:
                 new_blocks.append(new_block)
         elif self.facing == 'east':
             for block in blocks:
-                new_block = ((self.dimensions[0] - block[0][2], block[0][1], block[0][0]), block[1], block[2])
+                new_block = ((self.DIMENSIONS["east"][0] - block[0][2], block[0][1], block[0][0]), block[1], block[2])
                 if 'facing' in block[2]:
                     if block[2]['facing'] == 'south':
                         new_block[2]['facing'] = 'west'
@@ -145,42 +142,13 @@ class Building:
         x_start -= 1
         z_start -= 1
         y_start -= 1
-        for x in range(x_start, x_start + self.dimensions[0] + 1):
-            for z in range(z_start, z_start + self.dimensions[2] + 1):
+        for x in range(x_start, x_start + self.DIMENSIONS[self.facing][0] + 1):
+            for z in range(z_start, z_start + self.DIMENSIONS[self.facing][2] + 1):
                 self.fill_column(x, y_start, z)
 
         # make the filling looks more natural
-        self.create_natural_lines('x', x_start, x_start + self.dimensions[0], z_start, z_start + self.dimensions[2], y_start)
-        self.create_natural_lines('z', z_start, z_start + self.dimensions[2], x_start, x_start + self.dimensions[0], y_start)
-
-        # add_natural_line = True
-        # line_number = 1
-        # z_details_start = z_start
-        # z_details_end = z_start + self.dimensions[2]
-
-        # while add_natural_line:
-
-        #     add_natural_line = False
-
-        #     for x_details in (x_start - line_number, x_start + self.dimensions[0] + line_number):
-        #         while random.randint(0,10) < 8:
-        #             z_details_start += 1
-        #         while random.randint(0,10) < 8:
-        #             z_details_end -= 1
-        #         for z_details in range(z_details_start, z_details_end):
-        #             add_natural_line = add_natural_line or self.fill_column(x_details, y_start, z_details)
-            
-        #     line_number += 1
-
-        # for z_details in (z_start -1, z_start + self.dimensions[2] + 1):
-        #     x_details_start = x_start
-        #     x_details_end = x_start + self.dimensions[0]
-        #     while random.randint(0,10) < 8:
-        #         x_details_start += 1
-        #     while random.randint(0,10) < 8:
-        #         x_details_end -= 1
-        #     for x_details in range(x_details_start, x_details_end):
-        #         self.fill_column(x_details, y_start, z_details)
+        self.create_natural_lines('x', x_start, x_start + self.DIMENSIONS[self.facing][0], z_start, z_start + self.DIMENSIONS[self.facing][2], y_start)
+        self.create_natural_lines('z', z_start, z_start + self.DIMENSIONS[self.facing][2], x_start, x_start + self.DIMENSIONS[self.facing][0], y_start)
         
     def build(self):
         self.fill_empty_space()
@@ -190,7 +158,11 @@ class Building:
             x += relative_x
             y += relative_y
             z += relative_z
-            ED.placeBlock((x, y, z), Block(block[1], block[2]))
+            if block[1] == "chest":
+                ED.placeBlock((x, y, z), Block(block[1], block[2], data={'Items': [{'Slot': '13b', 'id': "apple", 'Count': '1b'}]}))
+            else:
+                ED.placeBlock((x, y, z), Block(block[1], block[2]))
+        self.settlement.buildings.append(self)
     
     def get_blocks(self):
         """

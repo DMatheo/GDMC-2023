@@ -9,14 +9,13 @@ from settlements.Surface import Surface
 
 def main():
     try:
-        # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
-        village = Surface("Village", (50, 50), (STARTX + 50, 30, STARTZ + 50))
+        # str_to_file(get_building_at((-10, -60, 3), (6, -46, 16)), "small_house")
+        village = Surface("Village", (STARTX + 100, 30, STARTZ + 100), 20, (STARTX, STARTZ), (LASTX - STARTX, LASTZ - STARTZ))
         village.settle()
 
         
     except KeyboardInterrupt: # useful for aborting a run-away program
         print("Pressed Ctrl-C to kill program.")
-
 
 # === STRUCTURE #4
 # The code in here will only run if we run the file directly (not imported).

@@ -33,8 +33,11 @@ GROUND_BLOCKS = (
     "sand",
     "terracotta", 
     "water",
+    "lava",
     "snow_block",
-    "podzol"
+    "podzol",
+    "mud",
+    "ice"
 )
 
 DECORATIVE_GROUND_BLOCKS = FLOWERS + (
@@ -47,4 +50,10 @@ CLIFF_BLOCKS = (
     "andesite",
     "diorite",
     "cobblestone"
+)
+
+ROAD_BLOCKS = (
+    "dirt_path",
+    "stone_bricks",
+    "campfire",
 )

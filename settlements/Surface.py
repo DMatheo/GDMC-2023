@@ -1,7 +1,10 @@
 from settlements.Settlement import Settlement
 from buildings.Small_house import Small_house
+from settlements.Farm_builder import Farm_builder
+from settlements.Road_builder import Road_builder
+from settlements.Building_builder import Building_builder
 
-from constants import ED, GROUND_BLOCKS, DECORATIVE_GROUND_BLOCKS
+from constants import ED, GROUND_BLOCKS, DECORATIVE_GROUND_BLOCKS, STARTX, STARTZ, LASTX, LASTZ
 from gdpc import geometry as geo
 from gdpc import Block
 
@@ -12,35 +15,22 @@ import random
 
 class Surface(Settlement):
 
+    MAX_ALTITUDE_DIFFERENCE = 8
 
-
-    def __init__(self, name, size, cave_location):
+    def __init__(self, name, cave_location, cave_size, location, size):
         self.ressources = dict()
         self.cave_location = cave_location
-        super().__init__(name, self.determine_location(size), size)
+        self.cave_size = cave_size
+        self.location = location
+        self.size = size
+        super().__init__(name, location, size)
 
+        #Cut all the trees in the area
+        self.wood_type = self.cut_trees_in_area(self.location, self.size)
+        print("Trees cut.")
 
-    def determine_location(self, size):
-
-        possibles_locations_values = {
-            (self.cave_location[0] - size[0], self.cave_location[2] - size[1]): 0,
-            (self.cave_location[0] - size[0], self.cave_location[2]): 0,
-            (self.cave_location[0], self.cave_location[2] - size[1]): 0,
-            (self.cave_location[0], self.cave_location[2]): 0,
-        }
-
-
-        for location in possibles_locations_values.keys():
-            for x in range(location[0], location[0] + size[0], 10):
-                for z in range(location[1], location[1] + size[1], 10):
-                    alt_diff = self.get_area_altitude_difference_with_trees((x, z), (10, 10))
-                    water_presence = self.is_water_present((x, z), (10, 10))
-                    if alt_diff < 2 and not water_presence:
-                        possibles_locations_values[location] += 1
-
-        print(possibles_locations_values)
-                
-        return max(possibles_locations_values, key=possibles_locations_values.get)
+        # get worldSlice without trees
+        self.worldSlice = ED.loadWorldSlice(geo.Rect(self.location, self.size))
 
     def get_area_altitude_difference_with_trees(self, start_coord, size):
         worldSlice = ED.loadWorldSlice(geo.Rect(start_coord, size))
@@ -92,6 +82,9 @@ class Surface(Settlement):
             x += 1
         return False
 
+    def is_practicable(self, start_coord, size):
+        return not self.is_water_present(start_coord, size) and self.get_area_altitude_difference_and_maxy(start_coord, size)[0] < self.MAX_ALTITUDE_DIFFERENCE
+
     def cut_trees_in_area(self, start_coord, size):
         worldSlice = ED.loadWorldSlice(geo.Rect(start_coord, size))
         heights = worldSlice.heightmaps["MOTION_BLOCKING"]
@@ -111,18 +104,19 @@ class Surface(Settlement):
                 z += 1
             z = start_coord[1]
             x += 1
+        return "spruce"
 
     def up_air_col(self, lenght, coord):
         for y in range(coord[1], coord[1] + lenght):
             ED.placeBlock((coord[0], y, coord[2]), Block("air"))
 
-    def create_quarry(self, size):
-        x = self.cave_location[0] - size // 2
-        z = self.cave_location[2] - size // 2
-        max_y = self.get_area_altitude_difference_and_maxy((x, z), (size, size))[1]
-        geo.placeCylinder(ED, (self.cave_location), size, max_y - self.cave_location[1], Block("air"))
+    def create_quarry(self):
+        x = self.cave_location[0] - self.cave_size // 2
+        z = self.cave_location[2] - self.cave_size // 2
+        max_y = self.get_area_altitude_difference_and_maxy((x, z), (self.cave_size, self.cave_size))[1]
+        geo.placeCylinder(ED, (self.cave_location), self.cave_size, max_y - self.cave_location[1], Block("air"))
 
-        circle_coords = circle((self.cave_location[0], self.cave_location[2]), size+2)
+        circle_coords = circle((self.cave_location[0], self.cave_location[2]), self.cave_size+2)
         angles = dict()
         for coord in circle_coords:
             x, z = coord[0], coord[1]
@@ -143,48 +137,52 @@ class Surface(Settlement):
                     if y == self.cave_location[1]:
                         break
     
-                
-        
-
     def settle(self):
 
         print("Settling surface settlement...")
 
-        #Cut all the trees in the area
-        self.cut_trees_in_area(self.location, self.size)
-
-        print("Trees cut.")
-
-        self.create_quarry(20)
+        self.create_quarry()
 
         print("Quarry created.")
 
+        road_builder = Road_builder(self)
+        road_builder.calculate_main_roads()
+        road = road_builder.get_best_road()
+        road_builder.create_road(road)
 
+        print("Main road created.")
 
-        #Get the wood_type with the most occurences
-        wood_type = "spruce"
-        nb_occurences = 0
-        for ressource in self.ressources.keys():
-            if "log" in ressource and self.ressources[ressource] > nb_occurences:
-                nb_occurences = self.ressources[ressource]
-                wood_type = ressource.split("log")[0][:-1]
+        farm_builder = Farm_builder(self)
+        farm_builder.create_farm(road)
 
-        x_offset = random.randint(0, Small_house.EAST_WEST_FACING_DIMENSIONS[0] + 3)
-        z_offset = random.randint(0, Small_house.EAST_WEST_FACING_DIMENSIONS[2] + 3)
-        facing = "east"
-        for x in range(self.location[0] + x_offset, self.location[0] + self.size[0], Small_house.EAST_WEST_FACING_DIMENSIONS[0] + 10):
-            z = self.location[1] + z_offset
-            while z < self.location[1] + self.size[1]:
-                randx = random.randint(-2, 2) + x
-                alt_diff, maxy = self.get_area_altitude_difference_and_maxy((randx, z), (Small_house.EAST_WEST_FACING_DIMENSIONS[0], Small_house.EAST_WEST_FACING_DIMENSIONS[2]))
-                water_presence = self.is_water_present((randx, z), (Small_house.EAST_WEST_FACING_DIMENSIONS[0], Small_house.EAST_WEST_FACING_DIMENSIONS[2]))
-                if alt_diff < 50 and not water_presence:
-                    house = Small_house((randx, maxy, z), wood_type, facing)
-                    house.build()
-                    self.buildings.append(house)
-                    z += house.dimensions[2] + 10
-                else:
-                    z += 1
-            facing = "west" if facing == "east" else "east"
+        print("Farm created.")
+
+        builder = Building_builder(self)
+
+        # Buildings along farm road
+        available_spaces = builder.place_buildings_along_road(road)
+        road_builder.calculate_roads_from_spaces(available_spaces, width=2)
+
+        # One street (road + buildings in both sides) by iteration
+        while any(not road["built"] for road in road_builder.roads):
+
+            road = road_builder.get_best_road()
+            road_builder.create_road(road)
+
+            available_spaces = builder.place_buildings_along_road(road)
+            road_builder.calculate_roads_from_spaces(available_spaces, width=2)
+
+            print("Street created.")
+        
+        for road in road_builder.roads:
+            print(road)
+
+        # #Get the wood_type with the most occurences
+        # wood_type = "spruce"
+        # nb_occurences = 0
+        # for ressource in self.ressources.keys():
+        #     if "log" in ressource and self.ressources[ressource] > nb_occurences:
+        #         nb_occurences = self.ressources[ressource]
+        #         wood_type = ressource.split("log")[0][:-1]
 
         print("Settling surface settlement done.")
