@@ -3,17 +3,17 @@ from gdpc.vector_tools import distance
 from buildings.Small_house import Small_house
 from buildings.Shop import Shop
 
-from constants import ED, GROUND_BLOCKS, ROAD_BLOCKS
+from constants import ED, GROUND_BLOCKS, ROAD_BLOCKS, DECORATIVE_GROUND_BLOCKS
 
 import random
 
 class Building_builder:
 
-    SHOP_NEARBY_DISTANCE = 50
+    SHOP_NEARBY_DISTANCE = 75
 
-    ALTITUDE_DIFF_MAX = 8
+    ALTITUDE_DIFF_MAX = 1
 
-    MINIMUM_SPACE_BETWEEN_BUILDINGS = 4 
+    MINIMUM_SPACE_BETWEEN_BUILDINGS = 8
 
     NO_BUILDING_SPACE_INTERVAL = (7,13)
 
@@ -33,7 +33,7 @@ class Building_builder:
 
         return False
 
-    def is_building_possible(self, starting_coord, dimensions):
+    def is_building_possible(self, starting_coord, dimensions, facing):
         """
         Return -999 if not possible, otherwise return the maxy of the area
         """
@@ -41,8 +41,9 @@ class Building_builder:
             return -999
 
         area_altitude_difference_and_maxy = self.surface_settlement.get_area_altitude_difference_and_maxy(starting_coord, (dimensions[0], dimensions[2]))
-        if area_altitude_difference_and_maxy[0] > self.ALTITUDE_DIFF_MAX:
+        if area_altitude_difference_and_maxy[2][facing] > self.ALTITUDE_DIFF_MAX:
             return -999
+
 
         return area_altitude_difference_and_maxy[1]
 
@@ -58,11 +59,11 @@ class Building_builder:
             starting_coord[1] if not facing == "south" else starting_coord[1] - Shop.DIMENSIONS[facing][2]
         )
 
-        y = self.is_building_possible(small_house_starting_coord, Small_house.DIMENSIONS[facing])
+        y = self.is_building_possible(small_house_starting_coord, Small_house.DIMENSIONS[facing], facing)
         if y > -999 and self.is_shop_nearby(small_house_starting_coord):
             return Small_house((small_house_starting_coord[0], y, small_house_starting_coord[1]), facing, self.surface_settlement)
         
-        y = self.is_building_possible(shop_starting_coord, Shop.DIMENSIONS[facing])
+        y = self.is_building_possible(shop_starting_coord, Shop.DIMENSIONS[facing], facing)
         if y > -999:
             return Shop((shop_starting_coord[0], y, shop_starting_coord[1]), facing, self.surface_settlement)
 
@@ -83,7 +84,6 @@ class Building_builder:
                 z += 1
             block_id = ED.getBlock((x, y, z)).id
             distance += 1
-        print(distance)
         return distance
 
     def is_place_available(self, starting_coord, size, facing):
@@ -94,9 +94,14 @@ class Building_builder:
         for x in x_range:
             for z in z_range:
                 y = self.surface_settlement.worldSlice.heightmaps["MOTION_BLOCKING_NO_LEAVES"][x - self.surface_settlement.location[0]][z - self.surface_settlement.location[1]] - 1
-                if not any(block_type in ED.getBlock((x, y, z)).id for block_type in (GROUND_BLOCKS)):
+                block = ED.getBlock((x, y, z)).id
+                if "air" in block:
                     return False
-        
+                while "air" not in block:
+                    if not any(block_type in block for block_type in GROUND_BLOCKS + DECORATIVE_GROUND_BLOCKS):
+                        return False
+                    y += 1
+                    block = ED.getBlock((x, y, z)).id
         return True
 
     def place_buildings_along_road(self, road):

@@ -18,7 +18,6 @@ class Surface(Settlement):
     MAX_ALTITUDE_DIFFERENCE = 8
 
     def __init__(self, name, cave_location, cave_size, location, size):
-        self.ressources = dict()
         self.cave_location = cave_location
         self.cave_size = cave_size
         self.location = location
@@ -61,13 +60,34 @@ class Surface(Settlement):
         heights = worldSlice.heightmaps["MOTION_BLOCKING_NO_LEAVES"]
         min = 900
         max = -900
+        side_mins = {
+            "north": 900,
+            "south": 900,
+            "west": 900,
+            "east": 900
+        }
+        x, z = start_coord[0], start_coord[1]
+        max_x, max_z = start_coord[0] + size[0], start_coord[1] + size[1]
         for height in heights:
             for y in height:
                 if y < min:
                     min = y
                 if y > max:
                     max = y
-        return (max - min, max)
+                if x == start_coord[0] and y < side_mins["east"]:
+                    side_mins["east"] = y
+                elif x == max_x - 1 and y < side_mins["west"]:
+                    side_mins["west"] = y
+                elif z == start_coord[1] and y < side_mins["south"]:
+                    side_mins["south"] = y
+                elif z == max_z - 1 and y < side_mins["north"]:
+                    side_mins["north"] = y
+                z += 1
+            z = start_coord[1]
+            x += 1
+        for side in side_mins.keys():
+            side_mins[side] = side_mins[side] - min
+        return (max - min, max, side_mins)
 
     def is_water_present(self, start_coord, size):
         worldSlice = ED.loadWorldSlice(geo.Rect(start_coord, size))
@@ -86,25 +106,35 @@ class Surface(Settlement):
         return not self.is_water_present(start_coord, size) and self.get_area_altitude_difference_and_maxy(start_coord, size)[0] < self.MAX_ALTITUDE_DIFFERENCE
 
     def cut_trees_in_area(self, start_coord, size):
+        ressources = dict()
         worldSlice = ED.loadWorldSlice(geo.Rect(start_coord, size))
         heights = worldSlice.heightmaps["MOTION_BLOCKING"]
         x, z = start_coord[0], start_coord[1]
         for height in heights:
             for y in height:
+                wood_type = ED.getBlock((x, y, z)).id
                 tmpy = y - 1
                 tmpblock_id = ED.getBlock((x, tmpy, z)).id
                 while not any(block_type in tmpblock_id for block_type in (DECORATIVE_GROUND_BLOCKS + GROUND_BLOCKS)):
-                    if tmpblock_id in self.ressources:
-                        self.ressources[tmpblock_id] += 1
+                    if tmpblock_id in ressources:
+                        ressources[tmpblock_id] += 1
                     else:
-                        self.ressources[tmpblock_id] = 1                        
+                        ressources[tmpblock_id] = 1                        
                     ED.placeBlock((x,tmpy,z), Block("air"))
                     tmpy -= 1
                     tmpblock_id = ED.getBlock((x, tmpy, z)).id
                 z += 1
             z = start_coord[1]
             x += 1
-        return "spruce"
+
+        # Get the wood_type with the most occurences
+        wood_type = "spruce"
+        nb_occurences = 0
+        for ressource in ressources.keys():
+            if "log" in ressource and ressources[ressource] > nb_occurences:
+                nb_occurences = ressources[ressource]
+                wood_type = ressource.split("log")[0][:-1]
+        return wood_type
 
     def up_air_col(self, lenght, coord):
         for y in range(coord[1], coord[1] + lenght):
@@ -174,15 +204,4 @@ class Surface(Settlement):
 
             print("Street created.")
         
-        for road in road_builder.roads:
-            print(road)
-
-        # #Get the wood_type with the most occurences
-        # wood_type = "spruce"
-        # nb_occurences = 0
-        # for ressource in self.ressources.keys():
-        #     if "log" in ressource and self.ressources[ressource] > nb_occurences:
-        #         nb_occurences = self.ressources[ressource]
-        #         wood_type = ressource.split("log")[0][:-1]
-
         print("Settling surface settlement done.")

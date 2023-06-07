@@ -6,6 +6,12 @@ import random
 
 class Building:
 
+    # Abstract attribute
+    DIMENSIONS = None
+
+    # Abstract attribute, must be a tuple (offset, width)
+    ENTRY = None
+
     def __init__(self, name, coord, blocks, facing, settlement):
         self.name = name
         self.coord = coord
@@ -113,11 +119,10 @@ class Building:
 
         line_number = 1
         while start_secondary < end_secondary:
-            add_natural_line = False
             for main_axis_details in (start_main - line_number, end_main + line_number):
-                while random.randint(0,10) < 7:
+                while random.randint(0,10) < 8:
                     start_secondary += 1
-                while random.randint(0,10) < 7:
+                while random.randint(0,10) < 8:
                     end_secondary -= 1
                 for secondary_axis_details in range(start_secondary, end_secondary):
                     distance_with_start = secondary_axis_details - start_secondary + 1
@@ -136,7 +141,7 @@ class Building:
                         raise ValueError("axis must be 'x' or 'z'")
             line_number += 1
 
-    
+
     def fill_empty_space(self):
         x_start, y_start, z_start = self.coord
         x_start -= 1

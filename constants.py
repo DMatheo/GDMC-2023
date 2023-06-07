@@ -37,12 +37,15 @@ GROUND_BLOCKS = (
     "snow_block",
     "podzol",
     "mud",
-    "ice"
+    "ice",
+    "gravel"
 )
 
 DECORATIVE_GROUND_BLOCKS = FLOWERS + (
     "grass",
-    "snow"
+    "snow",
+    "dead_bush",
+    "fern"
 )
 
 CLIFF_BLOCKS = (
@@ -54,6 +57,5 @@ CLIFF_BLOCKS = (
 
 ROAD_BLOCKS = (
     "dirt_path",
-    "stone_bricks",
-    "campfire",
+    "stone_bricks"
 )

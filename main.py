@@ -13,7 +13,6 @@ def main():
         village = Surface("Village", (STARTX + 100, 30, STARTZ + 100), 20, (STARTX, STARTZ), (LASTX - STARTX, LASTZ - STARTZ))
         village.settle()
 
-        
     except KeyboardInterrupt: # useful for aborting a run-away program
         print("Pressed Ctrl-C to kill program.")
 
