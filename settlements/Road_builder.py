@@ -164,7 +164,6 @@ class Road_builder():
         counter = 0
         value = 0
         for d in range(start, end):
-            prec_max_y = None
             max_y = -99
             for w in range(road["start"][width_axis], road["start"][width_axis] + road["width"]):
                 x = w if direction_axis == 1 else d
@@ -197,15 +196,6 @@ class Road_builder():
                 elif abs(ten_block_right_y - max_y) > 3:
                     value -= 3
 
-            if not prec_max_y == None:
-                if abs(max_y - prec_max_y) > 6:
-                    value -= 40
-                elif abs(max_y - prec_max_y) > 3:
-                    value -= 20
-                elif abs(max_y - prec_max_y) > 1:
-                    value -= 10
-            prec_max_y = max_y
-
             if counter == self.ROAD_VALUE_SUB_PART_LENGHT:
                 values.append(value)
                 counter = 0
@@ -236,18 +226,16 @@ class Road_builder():
                 x = w if direction_axis == 1 else coordinate
                 z = w if direction_axis == 0 else coordinate
                 y = self.surface_settlement.worldSlice.heightmaps["MOTION_BLOCKING_NO_LEAVES"][x - self.surface_settlement.location[0]][z - self.surface_settlement.location[1]] - 1
-                if not self.valid_road_position((x, y, z)):
+                if not self.valid_road_position((x, y, z), direction_axis):
                     end = (x if z == w else space[0][width_axis] + width, z if x == w else space[0][width_axis] + width)
                     break
             coordinate += 1 if space[1]== "east" or space[1]== "south" else -1
         return end
 
-    def valid_road_position(self, coord):
-
+    def valid_road_position(self, coord, direction_axis):
 
         if self.is_out_of_bounds(coord):
             return False
-
 
         if self.surface_settlement.worldSlice.heightmaps["MOTION_BLOCKING_NO_LEAVES"][coord[0] - self.surface_settlement.location[0]][coord[2] - self.surface_settlement.location[1]] != coord[1] +1:
             return False
@@ -255,9 +243,19 @@ class Road_builder():
         if "air" in ED.getBlock((coord[0], coord[1]-1, coord[2])).id:
             return False
 
-        if "air" not in ED.getBlock((coord[0], coord[1] +1, coord[2])).id:
-            return False
+        y = coord[1] +1
+        block = ED.getBlock((coord[0], y, coord[2])).id
+        while "air" not in block:
+            if not any(block_type in block for block_type in GROUND_BLOCKS + DECORATIVE_GROUND_BLOCKS):
+                return False
+            y += 1
+            block = ED.getBlock((coord[0], y, coord[2])).id
 
+        prec_x = coord[0] - 1 if direction_axis == 0 else coord[0]
+        prec_z = coord[2] - 1 if direction_axis == 1 else coord[2]
+        prec_y = self.surface_settlement.worldSlice.heightmaps["MOTION_BLOCKING_NO_LEAVES"][prec_x - self.surface_settlement.location[0]][prec_z - self.surface_settlement.location[1]] - 1
+        if abs(prec_y - coord[1]) > 1:
+            return False
         
         return True
 
