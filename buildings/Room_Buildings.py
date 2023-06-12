@@ -8,9 +8,10 @@ from random import randint, random
 from gdpc import editor_tools as et
 from gdpc import geometry as geo
 
-from gdpc.vector_tools import cylinder
+from gdpc.vector_tools import cylinder, cuboid3D
 
 import random
+import math
 
 DIRECTION_MAPPING_LIGHTS = {
     "east": {"side": "x_bottom", "pos_1": "south", "pos_2": "west", "pos_3": "north"},
@@ -149,7 +150,7 @@ def initiate_floor_center(room):
     if chosen_room == "fountain":
         build_fountain(room)
     elif chosen_room == "altar":
-        build_altar(room)
+        build_middle_circle(room)
 
 def initiate_barrel_storage(room):
     heightmap = generate_random_height_map(width = room.width, max_height = room.height//2)
@@ -174,21 +175,28 @@ def build_fountain(room):
     print(room)
     print(room.width)
     pos = room.pos
-    fountain_base = cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width-1, 1, hollow=True)
+    fountain_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width, 1, tube=True))
+    fountain_base = fountain_base | set(cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width, 1, tube=False))
+
+    base_point = (pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1)
+    end_point = (math.ceil(pos[0] + room.width / 2 - 1), pos[1]-1, math.ceil(pos[2] + room.width / 2 - 1))
+    fountain_base = fountain_base | set(cuboid3D((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), ())
     print(fountain_base)
     for coord in fountain_base:
-        print(coord)
         ED.placeBlock(coord, Block("quartz_block"))
+    
+    water_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width-2, 1, tube=False))
+    for coord in water_base:
+        ED.placeBlock(coord, Block("water"))
 
-def build_altar(room):
+def build_middle_circle(room):
     #Using black glazed terractora's pattern
     print(room)
     print(room.width)
     pos = room.pos
     room_even_offset = int(room.width % 2 == 0)*2
-    altar_base = cylinder((pos[0] + room.width // 2, pos[1]-1, pos[2] + room.width // 2), 2 + room_even_offset, 1, hollow=True)
-    print(altar_base)
-    for coord in altar_base:
+    middle_base = cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width // 2, 1, tube=True)
+    for coord in middle_base:
         print(coord)
         ED.placeBlock(coord, Block("black_glazed_terracotta"))
     
