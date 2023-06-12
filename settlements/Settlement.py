@@ -9,7 +9,6 @@ class Settlement:
         self.location = location
         self.size = size
         self.buildings = []
-        self.worldSlice = ED.loadWorldSlice(geo.Rect(location, size))
 
     def settle(self):
         """

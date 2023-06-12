@@ -13,7 +13,7 @@ from random import randint
 def main():
     try:
         # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
-        village = Surface("Village", (50, 50), (STARTX + 50, 30, STARTZ + 50))
+        village = Surface("Village", (STARTX + 100, 30, STARTZ + 100), 20, (STARTX, STARTZ), (LASTX - STARTX, LASTZ - STARTZ))
         temple = Underground("Temple", village, rooms_width=6, rooms_walls_width=3, walls_width=3, floors_height=5, nbfloors=3)
         village.settle()
         print(temple)
@@ -21,10 +21,8 @@ def main():
         temple.settle()
         
 
-        
     except KeyboardInterrupt: # useful for aborting a run-away program
         print("Pressed Ctrl-C to kill program.")
-
 
 # === STRUCTURE #4
 # The code in here will only run if we run the file directly (not imported).
