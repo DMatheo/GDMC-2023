@@ -180,7 +180,7 @@ def build_fountain(room):
 
     base_point = (pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1)
     end_point = (math.ceil(pos[0] + room.width / 2 - 1), pos[1]-1, math.ceil(pos[2] + room.width / 2 - 1))
-    fountain_base = fountain_base | set(cuboid3D((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), ())
+    fountain_base = fountain_base | set(cuboid3D((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), ()))
     print(fountain_base)
     for coord in fountain_base:
         ED.placeBlock(coord, Block("quartz_block"))
