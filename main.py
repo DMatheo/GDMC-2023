@@ -6,12 +6,20 @@ from gdpc import geometry as geo
 from utils import get_building_at, str_to_file
 
 from settlements.Surface import Surface
+from settlements.Underground import Underground
+
+from random import randint
 
 def main():
     try:
         # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
         village = Surface("Village", (50, 50), (STARTX + 50, 30, STARTZ + 50))
+        temple = Underground("Temple", village, rooms_width=6, rooms_walls_width=3, walls_width=3, floors_height=5, nbfloors=3)
         village.settle()
+        print(temple)
+        print(village.cave_location)
+        temple.settle()
+        
 
         
     except KeyboardInterrupt: # useful for aborting a run-away program
