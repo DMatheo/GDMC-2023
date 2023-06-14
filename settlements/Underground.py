@@ -2,12 +2,12 @@ from settlements.Settlement import Settlement
 
 from gdpc import geometry as geo
 
-from gdpc.vector_tools import cuboid3D, Box
+from gdpc.vector_tools import cuboid3D, Box, circle
 
 from gdpc import Block
 
 from constants import ED
-from utils import generate_random_with_probability
+from utils import generate_random_with_probability, generate_random_height_map
 
 from buildings.Room_Buildings import build_room, RoomType, place_lamp_at
 
@@ -15,18 +15,34 @@ from buildings.Room_Buildings import build_room, RoomType, place_lamp_at
 import math
 import random 
 class Underground(Settlement):
+    """
+    Underground settlement class
+
+    :param name(str): Name of the settlement
+    :param surface(object): Surface object
+    :param rooms_width(int): width of rooms
+    :param rooms_walls_width(int): width of rooms walls
+    :param walls_width(int): width of the external shell of the pyramid
+    :param floors_height(int): height of floor levels
+    :param nbfloors(int): number of floors
+    """
 
     def __init__(self, name:str, surface:object, rooms_width : int, rooms_walls_width : int, walls_width:int, floors_height:int, nbfloors:int):
-        """Initialisation of the Underground class
+        """
+        Initialisation of the Underground class
+        Minimum values allowed : 4 rooms_width, 1 rooms_walls_width, 1 walls_width, 4 floors_height, 1 nbfloors
+        Please change the number of floors with caution, the algorithm is not optimized for a large number of floors, and the complexity grows factorially with the number of floors
 
-        Args:
-            name (str): Name of the settlement
-            surface (object): Surface object
-            width (int): width of walls
-            height (int): height of floor levels
-            floors (int): number of floors
+        :param name(str): Name of the settlement
+        :param surface(object): Surface object
+        :param rooms_width(int): width of rooms
+        :param rooms_walls_width(int): width of rooms walls
+        :param walls_width(int): width of the external shell of the pyramid
+        :param floors_height(int): height of floor levels
+        :param nbfloors(int): number of floors
         """
 
+        self.__surface = surface
         self.ressources = dict()
         self.cave_location = surface.cave_location
         super().__init__(name, surface.location, surface.size)
@@ -38,10 +54,52 @@ class Underground(Settlement):
         self.floors = []
         self.entities = []
 
+        if rooms_width < 4 :
+            print("rooms_width must be greater than 4")
+            print("rooms_width set to 4")
+            rooms_width = 4
+        if rooms_walls_width < 1 :
+            print("rooms_walls_width must be greater than 1")
+            print("rooms_walls_width set to 1")
+            rooms_walls_width = 1
+        if walls_width < 1 :
+            print("walls_width must be greater than 1")
+            print("walls_width set to 1")
+            walls_width = 1
+        if floors_height < 4 :
+            print("floors_height must be greater than 4")
+            print("floors_height set to 4")
+            floors_height = 4
+        if nbfloors < 1 :
+            print("nbfloors must be greater than 1")
+            print("nbfloors set to 1")
+            nbfloors = 1
+
+
     def settle(self):
+        """
+        Start the underground settlement
+        """
 
         #Pyramid creation
         self.create_pyramid()
+        self.clear_top()
+
+    def clear_top(self):
+        """
+        Clear the top of the pyramid using a reversed modified sin² function's heightmap
+        """
+
+        map = generate_random_height_map(self.__surface.cave_size*2, self.walls_width+(self.rooms_width//2))
+        middle_coordinates = (self.cave_location[0], self.cave_location[2])
+        start_circle = list(circle(middle_coordinates, self.__surface.cave_size, True))
+        start_coordinates = (middle_coordinates[0] - self.__surface.cave_size//2 - 1, middle_coordinates[1] - self.__surface.cave_size//2 - 1)
+
+        for x,z in start_circle:
+            index_x = x - start_coordinates[0]
+            index_z = z - start_coordinates[1]
+            for y in range(map[index_x][index_z]):
+                ED.placeBlock((x, self.cave_location[1]-y, z), Block("air"))
     
     def create_pyramid(self):
         """
@@ -72,11 +130,13 @@ class Underground(Settlement):
             lowest_z = base[2] - math.ceil((self.rooms_width-1)/2) - (self.rooms_width * floor_level) - (self.rooms_walls_width * floor_level) - self.walls_width
             highest_z = base[2] + math.floor((self.rooms_width-1)/2) + (self.rooms_width * floor_level) + (self.rooms_walls_width * floor_level) + self.walls_width
 
+            #We get the lowest and highest points of the ground and the floor
             lowest_floor_point = (lowest_x, lowest_y+1, lowest_z)
             highest_floor_point = (highest_x, highest_y+self.height, highest_z)
             lowest_ground_point = (lowest_x, lowest_y - self.walls_width + 1, lowest_z)
             highest_ground_point = (highest_x, highest_y, highest_z)
-
+            
+            #We take care of the special case of the first floor created, which has to be the top of the pyramid
             if step != 0:
                 #We take the top ground for later
                 lowest_top_ground_point = (lowest_x, lowest_y, lowest_z)
@@ -85,7 +145,7 @@ class Underground(Settlement):
 
                 #We make the ground
                 self.entities.append(cuboid3D(lowest_ground_point, highest_ground_point))
-                geo.placeCuboid(ED, lowest_ground_point, highest_ground_point, Block("red_sandstone"))
+                geo.placeCuboid(ED, lowest_ground_point, highest_ground_point, list([Block("red_sandstone")]*4 + [Block("copper_block")]))
 
                 #We make the floor (walls and air)
                 floor_coordinates = cuboid3D(lowest_floor_point, highest_floor_point)
@@ -114,7 +174,7 @@ class Underground(Settlement):
                 ground = cuboid3D(lowest_ground_point, highest_ground_point)
                 floor.set_ground(ground)
                 self.entities.append(ground)
-                geo.placeCuboid(ED, lowest_ground_point, highest_ground_point, Block("red_sandstone"))
+                geo.placeCuboid(ED, lowest_ground_point, highest_ground_point, list([Block("red_sandstone")]*4 + [Block("copper_block")]))
             
             print("Floor " + str(floor_level) + " created.")
         
@@ -132,6 +192,7 @@ class Underground(Settlement):
         """
         Decompose and vegetate all the floors
         """
+
         probability_of_decomposition = 0.12
         probability_of_vegetation = 0.09
 
@@ -152,7 +213,13 @@ class Underground(Settlement):
 
 
 
-    def setup_up_rooms(self, floor_down_rooms):
+    def setup_up_rooms(self, floor_down_rooms: dict):
+        """
+        Setup the rooms that are used as a way to go to another floor
+        
+        :param floor_down_rooms(dict): The rooms that are used as a way to go to another floor
+        """
+
         for step, index in floor_down_rooms.items():
             if step >= len(self.floors)-2:
                 continue
@@ -168,7 +235,24 @@ class Underground(Settlement):
             floor.build_rooms()
         
 class Floor():
+    """
+    A floor of the pyramid
+
+    :param floor(int): The floor number
+    :param rooms_width(int): The width of the rooms
+    :param rooms_walls_width(int): The width of the walls of the rooms
+    :param height(int): The height of the floor
+    """
+
     def __init__(self, floor:int, rooms_width:int, rooms_walls_width:int, height:int):
+        """
+        Constructor of the floor
+        
+        :param floor(int): The floor number
+        :param rooms_width(int): The width of the rooms
+        :param rooms_walls_width(int): The width of the walls of the rooms
+        :param height(int): The height of the floor
+        """
         self.floor = floor
         self.rooms_width = rooms_width
         self.rooms_walls_width = rooms_walls_width
@@ -199,50 +283,93 @@ class Floor():
             for a in range(0, width_of_air, width_of_rooms):
                 self.rooms.append([])
                 for b in range(0, width_of_air, width_of_rooms):
+                    #We calculate the start and end point of the room in order to get the cuboid
+                    #We also calculate if it is a room in the center of the floor, needed later
                     start_point_room = (self.starting_point[0]+a, self.starting_point[1], self.starting_point[2]+b)
                     end_point_room = (self.starting_point[0]+a+self.rooms_width-1, self.starting_point[1]+self.height-1, self.starting_point[2]+b+self.rooms_width-1)
                     room_in_center_on_x = a == center_of_floor
                     room_in_center_on_z = b == center_of_floor
-                    print("Stats d'une room en particulier")
-                    print(center_of_floor)
-                    print(a)
-                    print(b)
-                    print(room_in_center_on_x)
-                    print(room_in_center_on_z)
                     room = Room(self.rooms_width, self.height, cuboid3D(start_point_room, end_point_room), start_point_room, room_in_center_on_x, room_in_center_on_z)
                     index_x = int(a/width_of_rooms)
                     index_z = int(b/width_of_rooms)
                     room.set_index(index_x, index_z)
                     self.rooms[index_x].append(room)
+        
+        #We now clear all rooms in order to have a clean floor
         for roomlist in self.rooms:
             for room in roomlist:
                 room.clear()
         
+        #We now add the neighbours of each room
         self.add_neighbours()
+        #We now create the path between the rooms
         self.clear_walls()
+        #Finally, we setup the corridors in the middle x and z axis
         self.setup_corridors()
+
         print("Rooms created.")
     
     def set_starting_point(self, starting_point:tuple):
+        """
+        Set the starting point of the floor
+        
+        :param starting_point(tuple): The starting point of the floor
+        """
+
         self.starting_point = starting_point
 
     def set_ground(self, ground:object):
+        """
+        Set the ground of the floor
+        
+        :param ground(object): The ground of the floor
+        """
+
         self.ground = ground
 
-    def get_ground(self):
+    def get_ground(self) -> object:
+        """
+        Get the ground of the floor
+        
+        :return: The ground of the floor
+        """
+
         return self.ground
 
     def set_walls(self, walls:object):
+        """
+        Set the walls of the floor
+        
+        :param walls(object): The walls of the floor
+        """
+
         self.walls = walls
     
-    def set_space(self, space:object):
+    def set_space(self, space:tuple):
+        """
+        Set the space of the floor
+        
+        :param space(tuple): The space of the floor
+        """
+
         self.space = set(space)
     
-    def get_space(self):
+    def get_space(self) -> set:
+        """
+        Get the space of the floor
+        
+        :return: The space of the floor
+        """
+
         return self.space
 
-    def define_floor_down_room(self):
-        #We don't want to take rooms that are in the middle of the floor
+    def define_floor_down_room(self) -> object:
+        """
+        Define the room where the player will go down
+        This room can't be the middle of the floor or at the sides of the floor
+        
+        :return: The room where the player will go down
+        """
         available = []
         middle = self.floor
         for i in range(1, len(self.rooms)-1):
@@ -259,6 +386,10 @@ class Floor():
             return None
 
     def add_neighbours(self):
+        """
+        Add the neighbours of each room with the cardinal points
+        """
+
         for x in range(len(self.rooms)):
             for z in range(len(self.rooms[x])):
                 room = self.rooms[x][z]
@@ -272,6 +403,10 @@ class Floor():
                     room.add_neighbour("south", self.rooms[x][z+1])
 
     def clear_walls(self):
+        """
+        Clear the walls between the rooms using a variant of the DFS algorithm
+        """
+
         path = [self.rooms[0][0]]
         visiteds = set()
         while len(visiteds) < len([room for roomlist in self.rooms for room in roomlist]):
@@ -289,6 +424,10 @@ class Floor():
                     path.pop()
                 
     def setup_corridors(self):
+        """
+        Setup the corridors in the middle x and z axis
+        """
+
         if self.floor != 0:
             aisle_x_starting_point = self.rooms[len(self.rooms)//2][0].pos
             aisle_x_ending_point = list(self.rooms[len(self.rooms)//2][len(self.rooms[0])-1].pos)
@@ -334,6 +473,13 @@ class Floor():
 
 
     def clear_wall_at_direction(self, pos:tuple, direction:str):
+        """
+        Clear the wall at the given direction
+        
+        :param pos(tuple): The position of the room
+        :param direction(str): The direction of the wall to clear
+        """
+
         match direction:
             case "east":
                 x_loop = self.rooms_width
@@ -362,13 +508,38 @@ class Floor():
                     ED.placeBlock((int(starting_point[0]+x_offset), starting_point[1]+y, int(starting_point[2]+z_offset)), Block("air"))
 
     def build_rooms(self):
+        """
+        Build the rooms
+        """
+
         for line in self.rooms:
             for room in line:
                 room.build()
 
 class Room:
+    """
+    A room
+    
+    :param width(int): The width of the room
+    :param height(int): The height of the room
+    :param blocks(set): The blocks taking up the room
+    :param starting_point(tuple): The starting point of the room
+    :param room_in_center_on_x(bool): If the room is centered on the x axis
+    :param room_in_center_on_z(bool): If the room is centered on the z axis
+    """
 
-    def __init__(self, width, height, blocks, starting_point, room_in_center_on_x = False, room_in_center_on_z = False):
+    def __init__(self, width:int, height:int, blocks:tuple, starting_point:tuple, room_in_center_on_x : bool = False, room_in_center_on_z : bool = False):
+        """
+        Room initialization
+        
+        :param width(int): The width of the room
+        :param height(int): The height of the room
+        :param blocks(tuple): The blocks taking up the room
+        :param starting_point(tuple): The starting point of the room
+        :param room_in_center_on_x(bool): If the room is centered on the x axis
+        :param room_in_center_on_z(bool): If the room is centered on the z axis
+        """
+
         #Values for the room
         self.width = width
         self.height = height
@@ -390,40 +561,107 @@ class Room:
             self.holded_room = RoomType.HALLWAY_Z
 
     def clear(self):
+        """
+        Clear the room with air blocks
+        """
+
         for pos in self.blocks:
             ED.placeBlock(pos, Block("air"))
 
     def set_pos(self, pos:tuple):
+        """
+        Set the position of the room
+        
+        :param pos(tuple): The position of the room
+        """
+
         self.pos = pos
     
-    def set_index(self, a,b):
+    def set_index(self, a:int,b:int):
+        """
+        Set the index of the room (in the rooms array of the floor)
+
+        :param a(int): The first index
+        :param b(int): The second index
+        """
+
         self.index = (a,b)
     
-    def get_pos(self):
+    def get_pos(self) -> tuple:
+        """
+        Returns the position of the room
+        
+        :return: The position of the room (x,y,z)
+        """
         return self.pos
     
-    def get_index(self):
+    def get_index(self) -> tuple:
+        """ 
+        Returns the index of the room
+        
+        :return: The index of the room (a,b)
+        """
         return self.index
 
-    def get_blocks(self):
+    def get_blocks(self) -> set:
+        """
+        Returns the blocks of the room
+        
+        :return: The blocks taking up the room
+        """
+
         return self.blocks
     
-    def add_neighbour(self, direction:str, room):
+    def add_neighbour(self, direction:str, room:object):
+        """
+        Add a neighbour in a cardinal direction
+        
+        :param direction(str): Cardinal direction in which the room is
+        :param room(object): The room at the cardinal direction
+        """
+
         self.neighbours[direction] = room
 
-    def get_neighbours(self):
+    def get_neighbours(self) -> list:
+        """
+        Returns a list of all the neighbours, without the cardinal direction not taken
+        
+        :return: A list of all the neighbours
+        """
         return [(k,v) for k,v in self.neighbours.items() if v != None]
     
-    def get_wall_directions(self):
+    def get_wall_directions(self) -> list:
+        """
+        Returns a list of all the cardinal directions not taken
+
+        :return: A list of all the cardinal directions not taken
+        """
+
         return [k for k,v in self.neighbours.items() if v == None]
 
     def set_room_type(self, room_type:RoomType):
+        """
+        Set the room type
+
+        :param room_type(RoomType): The room type
+        """
+
         self.holded_room = room_type
 
-    def get_room_type(self):
+    def get_room_type(self) -> RoomType:
+        """
+        Returns the room type
+
+        :return: The room type
+        """
+        
         return self.holded_room
 
     def build(self):
+        """
+        Build the room
+        """
+
         if not self.builded:
             build_room(self)
             self.builded = True

@@ -13,6 +13,7 @@ from gdpc.vector_tools import cylinder, cuboid3D
 import random
 import math
 
+# This is the list of blocks that can be used to build the lamps
 DIRECTION_MAPPING_LIGHTS = {
     "east": {"side": "x_bottom", "pos_1": "south", "pos_2": "west", "pos_3": "north"},
     "west": {"side": "x_top", "pos_1": "south", "pos_2": "east", "pos_3": "north"},
@@ -20,13 +21,7 @@ DIRECTION_MAPPING_LIGHTS = {
     "south": {"side": "z_top", "pos_1": "east", "pos_2": "north", "pos_3": "west"}
 }
 
-OFFSETS_LIGHTS = {
-    "east": (0, 0, 1),
-    "west": (0, 0, -1),
-    "north": (1, 0, 0),
-    "south": (-1, 0, 0)
-}
-
+# Enumeration of the type of rooms
 class RoomType(Enum):
     MARKET = 1
     TAVERN = 2
@@ -42,23 +37,36 @@ class RoomType(Enum):
     TREASURE_ROOM = -5
     FLOOR_CENTER = -6
 
-def get_random_room_type(room):
+def get_random_room_type(room: object) -> RoomType:
+    """
+    Returns a random room type for the given room.
+
+    :param room (object): The room to get the type for.
+    :return: The type of the room.
+    """
+
     #All rooms that have a negative value are not supposed to be randomly given to a room.
 
     room_types = [RoomType.MARKET, RoomType.TAVERN, RoomType.INN, RoomType.BARREL_STORAGE, RoomType.FORGE, RoomType.LIBRARY]
     #all rooms have the same probability of being chosen
     return RoomType.BARREL_STORAGE
+
+    #Abandoned, was the original plan
     if len(room.get_wall_directions()) == 0:
         return RoomType.FOUR_SIDED_COVERED #May happen in extremely rare cases
     else:
         return random.choice(room_types)
 
 
-def build_room(room):   
-    print(room.get_room_type())
+def build_room(room : object):
+    """ 
+    Builds the room in the world.
+    
+    :param room (object): The room to build.
+    """
+
     #Treasure room
     if len(room.get_neighbours()) == 0 and room.get_room_type() == RoomType.FLOOR_CENTER:
-        print("Meowzie, my friend")
         room.set_room_type(RoomType.TREASURE_ROOM)
         initiate_treasure_room(room)
         return
@@ -108,7 +116,15 @@ def build_room(room):
         initiate_stair_up(room)
         return
 
-def place_lamp_at(coord, direction, width):
+def place_lamp_at(coord:tuple, direction:str, width:int):
+    """ 
+    Places a lamp at the given coordinates.
+
+    :param coord (tuple): The coordinates of the lamp.
+    :param direction (str): The direction of the lamp.
+    :param width (int): The width of the lamp.
+    """
+
     if direction is None:
         raise ValueError("No direction given")
     x, y, z = coord
@@ -144,7 +160,13 @@ def place_lamp_at(coord, direction, width):
     elif direction == "north" or direction == "south":
         ED.placeBlock((x + width + 1, y, z), Block("sandstone_stairs", {"facing": facing_direction_dict["pos_3"], "half": "top"}))
 
-def initiate_floor_center(room):
+def initiate_floor_center(room:object):
+    """
+    Initiates the floor center of the room.
+    
+    :param room (object): The room to initiate.
+    """
+
     #We want a fountain or an altar in the center of the room
     chosen_room = random.choice(["fountain", "altar"])
     if chosen_room == "fountain":
@@ -152,7 +174,13 @@ def initiate_floor_center(room):
     elif chosen_room == "altar":
         build_middle_circle(room)
 
-def initiate_barrel_storage(room):
+def initiate_barrel_storage(room:object):
+    """
+    Initiates the barrel storage of the room.
+    
+    :param room (object): The room to initiate.
+    """
+
     heightmap = generate_random_height_map(width = room.width, max_height = room.height//2)
     start = room.get_pos()
     LOOTS_IN_BARRELS = {"dirt":0.85, "iron_ingot":0.08, "gold_ingot":0.02, "diamond":0.0025, "emerald":0.0025, "coal":0.03, "redstone":0.0025, "lapis_lazuli":0.0025, "quartz":0.005, "obsidian":0.00499, "netherite_ingot":0.00001}
@@ -171,17 +199,19 @@ def initiate_barrel_storage(room):
                 et.placeContainerBlock(ED, (start[0]+x, start[1]+y, start[2]+z), Block("minecraft:barrel", {"facing":"up"}), chest_content)
 
     
-def build_fountain(room):
-    print(room)
-    print(room.width)
+def build_fountain(room:object):
+    """
+    Builds a fountain in the center of the room.
+    
+    :param room (object): The room to initiate.
+    """
+
     pos = room.pos
     fountain_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width, 1, tube=True))
     fountain_base = fountain_base | set(cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width, 1, tube=False))
 
     base_point = (pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1)
     end_point = (math.ceil(pos[0] + room.width / 2 - 1), pos[1]-1, math.ceil(pos[2] + room.width / 2 - 1))
-    #fountain_base = fountain_base | set(cuboid3D((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), ()))
-    print(fountain_base)
     for coord in fountain_base:
         ED.placeBlock(coord, Block("quartz_block"))
     
@@ -189,24 +219,32 @@ def build_fountain(room):
     for coord in water_base:
         ED.placeBlock(coord, Block("water"))
 
-def build_middle_circle(room):
+def build_middle_circle(room:object):
+    """
+    Builds a circle in the center of the room using black glazed terractora.
+    
+    :param room (object): The room to initiate.
+    """
+
     #Using black glazed terractora's pattern
-    print(room)
-    print(room.width)
     pos = room.pos
     room_even_offset = int(room.width % 2 == 0)*2
     middle_base = cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width // 2, 1, tube=True)
     for coord in middle_base:
-        print(coord)
         ED.placeBlock(coord, Block("black_glazed_terracotta"))
     
 
-def initiate_stair_down(room):
+def initiate_stair_down(room:object):
+    """
+    Initiates a room with a way to go down.
+    
+    :param room (object): The room to initiate.
+    """
+
     starting_pos = list(room.pos)
     starting_pos[0] += room.width // 2 - 1
     starting_pos[1] -= 1
     starting_pos[2] += room.width // 2 - 1
-    print(starting_pos)
     
     hole_2x2_offset = int(room.width % 2 == 0)
     ending_pos = starting_pos
@@ -217,7 +255,6 @@ def initiate_stair_down(room):
     width = room.width
 
     geo.placeCuboid(ED, starting_pos, ending_pos, Block("air"))
-    print("MEOWOJSOJOJ")
     for i in range(0, int(width%2 == 0)+3):
         for j in range(0, int(width%2 == 0)+3):
             #First, the corners
@@ -244,13 +281,18 @@ def initiate_stair_down(room):
     ED.flushBuffer()
 
 
-def initiate_stair_up(room):
+def initiate_stair_up(room:object):
+    """
+    Initiates a room with a way to go up.
+    
+    :param room (object): The room to initiate.
+    """
+
     starting_pos = list(room.pos)
     starting_pos[0] += room.width // 2 - int(room.width % 2 == 0)
     starting_pos[2] += room.width // 2 - int(room.width % 2 == 0)
     width = room.width
     y = 0
-    print("UWAAAAAAAAAAAAH")
     while ED.getBlock((starting_pos[0], starting_pos[1] + y, starting_pos[2] - 1)).id != "minecraft:sandstone_stairs":
         for i in range(0, int(width%2 == 0)+1):
             ED.runCommand(f"setblock {starting_pos[0] + i} {starting_pos[1] + y} {starting_pos[2]} minecraft:ladder[facing=south]")
@@ -260,7 +302,13 @@ def initiate_stair_up(room):
                 #ED.placeBlock((starting_pos[0] + 1, starting_pos[1] + y, starting_pos[2] + i), Block("ladder", {"facing": "south"}))
         y+=1
 
-def initiate_treasure_room(room):
+def initiate_treasure_room(room:object):
+    """
+    Initiates a room with a treasure room using a variant of sin²(x) as a heightmap.
+    
+    :param room (object): The room to initiate.
+    """
+    
     heightmap = generate_random_height_map(width = room.width, max_height = room.height)
     start = room.get_pos()
     TREASURE_BLOCKS = {"gold_block" : 0.85, "lapis_block" : 0.08, "emerald_block" : 0.05, "diamond_block" : 0.02}
