@@ -120,9 +120,9 @@ class Building:
         line_number = 1
         while start_secondary < end_secondary:
             for main_axis_details in (start_main - line_number, end_main + line_number):
-                while random.randint(0,10) < 8:
+                while random.randint(0,10) < 9:
                     start_secondary += 1
-                while random.randint(0,10) < 8:
+                while random.randint(0,10) < 9:
                     end_secondary -= 1
                 for secondary_axis_details in range(start_secondary, end_secondary):
                     distance_with_start = secondary_axis_details - start_secondary + 1

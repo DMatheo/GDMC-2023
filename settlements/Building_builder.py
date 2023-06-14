@@ -11,7 +11,7 @@ class Building_builder:
 
     SHOP_NEARBY_DISTANCE = 75
 
-    ALTITUDE_DIFF_MAX = 1
+    ALTITUDE_DIFF_MAX = 2
 
     MINIMUM_SPACE_BETWEEN_BUILDINGS = 8
 
@@ -42,6 +42,9 @@ class Building_builder:
 
         area_altitude_difference_and_maxy = self.surface_settlement.get_area_altitude_difference_and_maxy(starting_coord, (dimensions[0], dimensions[2]))
         if area_altitude_difference_and_maxy[2][facing] > self.ALTITUDE_DIFF_MAX:
+            return -999
+
+        if area_altitude_difference_and_maxy[0] > 5:
             return -999
 
 
