@@ -1,6 +1,6 @@
 #ENUMERATION OF THE TYPE OF ROOMS
 from enum import Enum
-from utils import generate_random_with_probability, generate_random_height_map
+from utils import generate_random_with_probability, generate_random_height_map, find_circle_coordinates
 from gdpc import Block
 import numpy as np
 from constants import ED
@@ -207,17 +207,17 @@ def build_fountain(room:object):
     """
 
     pos = room.pos
-    fountain_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width, 1, tube=True))
-    fountain_base = fountain_base | set(cylinder((pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1), room.width, 1, tube=False))
+    is_even_offset = 0 if room.width%2 != 0 else -1
+    fountain_base = set(cylinder((pos[0] + room.width // 2 + is_even_offset, pos[1], pos[2] + room.width // 2 + is_even_offset), room.width, 1, tube=True))
+    fountain_base = fountain_base | set(cylinder((pos[0] + room.width // 2 + is_even_offset, pos[1]-1, pos[2] + room.width // 2 + is_even_offset), room.width, 1, tube=False))
 
-    base_point = (pos[0] + room.width // 2 - 1, pos[1]-1, pos[2] + room.width // 2 - 1)
-    end_point = (math.ceil(pos[0] + room.width / 2 - 1), pos[1]-1, math.ceil(pos[2] + room.width / 2 - 1))
     for coord in fountain_base:
         ED.placeBlock(coord, Block("quartz_block"))
     
-    water_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width-2, 1, tube=False))
-    for coord in water_base:
-        ED.placeBlock(coord, Block("water"))
+    if(room.width-2 > 1):
+        water_base = set(cylinder((pos[0] + room.width // 2 - 1, pos[1], pos[2] + room.width // 2 - 1), room.width-2, 1, tube=False))
+        for coord in water_base:
+            ED.placeBlock(coord, Block("water"))
 
 def build_middle_circle(room:object):
     """

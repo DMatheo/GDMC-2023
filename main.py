@@ -17,10 +17,15 @@ def main():
         print(start_indexes)
         # str_to_file(get_building_at((-10,-60, 3), (10, -40, 20)), "simple_house")
         village = Surface("Village", (STARTX + start_indexes[0], 30, STARTZ + start_indexes[1]), 20, (STARTX, STARTZ), (LASTX - STARTX, LASTZ - STARTZ))
-        temple = Underground("Temple", village, rooms_width=6, rooms_walls_width=3, walls_width=3, floors_height=5, nbfloors=3)
+        
+        rooms_width = randint(6, 9)
+        rooms_walls_width = randint(2, 4)
+        walls_width = randint(2, 4)
+        floors_height = randint(4, 6)
+        nbfloors = randint(3, 4)
+        temple = Underground("Temple", village, rooms_width, rooms_walls_width, walls_width, floors_height, nbfloors)
+
         village.settle()
-        print(temple)
-        print(village.cave_location)
         temple.settle()
         
 

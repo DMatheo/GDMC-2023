@@ -147,3 +147,53 @@ def generate_random_height_map(width:int, max_height:int, frequency:float=0.5, a
             height_map[z][x] = int(height_value * max_height + random.randint(-1, 1))
 
     return height_map
+
+def find_circle_coordinates(external_coordinates):
+    # Find center and radius of the circle
+    x_coordinates, y_coordinates = zip(*external_coordinates)
+    center_x = sum(x_coordinates) / len(x_coordinates)
+    center_y = sum(y_coordinates) / len(y_coordinates)
+    radius = math.sqrt((x_coordinates[0] - center_x)**2 + (y_coordinates[0] - center_y)**2)
+
+    # Find all the coordinates within the circle
+    circle_coordinates = []
+    min_x = math.floor(center_x - radius)
+    max_x = math.ceil(center_x + radius)
+    min_y = math.floor(center_y - radius)
+    max_y = math.ceil(center_y + radius)
+
+    for x in range(min_x, max_x + 1):
+        for y in range(min_y, max_y + 1):
+            if (x - center_x)**2 + (y - center_y)**2 <= radius**2:
+                circle_coordinates.append((x, y))
+
+    return circle_coordinates
+
+def find_circle_coordinates(external_coordinates) -> list:
+    """
+    Finds all the coordinates within a circle.
+    This function exists because of a bug in the current circle object in the GDPC library.
+    
+    :param external_coordinates(list): The coordinates of the circle.
+    :return: The coordinates within the circle.
+    :rtype: list
+    """
+    # Find center and radius of the circle
+    x_coordinates, y_coordinates = zip(*external_coordinates)
+    center_x = sum(x_coordinates) / len(x_coordinates)
+    center_y = sum(y_coordinates) / len(y_coordinates)
+    radius = math.sqrt((x_coordinates[0] - center_x)**2 + (y_coordinates[0] - center_y)**2)
+
+    # Find all the coordinates within the circle
+    circle_coordinates = []
+    min_x = math.floor(center_x - radius)
+    max_x = math.ceil(center_x + radius)
+    min_y = math.floor(center_y - radius)
+    max_y = math.ceil(center_y + radius)
+
+    for x in range(min_x, max_x + 1):
+        for y in range(min_y, max_y + 1):
+            if (x - center_x)**2 + (y - center_y)**2 <= radius**2:
+                circle_coordinates.append((x, y))
+
+    return circle_coordinates

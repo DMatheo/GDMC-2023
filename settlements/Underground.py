@@ -7,7 +7,7 @@ from gdpc.vector_tools import cuboid3D, Box, circle
 from gdpc import Block
 
 from constants import ED
-from utils import generate_random_with_probability, generate_random_height_map
+from utils import generate_random_with_probability, generate_random_height_map, find_circle_coordinates
 
 from buildings.Room_Buildings import build_room, RoomType, place_lamp_at
 
@@ -45,6 +45,9 @@ class Underground(Settlement):
         self.__surface = surface
         self.ressources = dict()
         self.cave_location = surface.cave_location
+        pyr_x = self.cave_location[0] + random.randint(-surface.cave_size//3, surface.cave_size//3)
+        pyr_z = self.cave_location[2] + random.randint(-surface.cave_size//3, surface.cave_size//3)
+        self.pyramid_location = (pyr_x, surface.cave_location[1], pyr_z)
         super().__init__(name, surface.location, surface.size)
         self.rooms_width = rooms_width
         self.rooms_walls_width = rooms_walls_width
@@ -92,7 +95,9 @@ class Underground(Settlement):
 
         map = generate_random_height_map(self.__surface.cave_size*2, self.walls_width+(self.rooms_width//2))
         middle_coordinates = (self.cave_location[0], self.cave_location[2])
-        start_circle = list(circle(middle_coordinates, self.__surface.cave_size, True))
+        start_circle = list(circle(middle_coordinates, self.__surface.cave_size, False))
+        #Get the insides of the circle by hand, because of a bug in the circle object
+        start_circle = find_circle_coordinates(start_circle)
         start_coordinates = (middle_coordinates[0] - self.__surface.cave_size//2 - 1, middle_coordinates[1] - self.__surface.cave_size//2 - 1)
 
         for x,z in start_circle:
@@ -106,7 +111,7 @@ class Underground(Settlement):
         Create a pyramid
         """
 
-        base = self.cave_location
+        base = self.pyramid_location
         floor_down_rooms = {}
 
         print("Creating pyramid...")
