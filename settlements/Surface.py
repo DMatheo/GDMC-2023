@@ -115,7 +115,7 @@ class Surface(Settlement):
                 wood_type = ED.getBlock((x, y, z)).id
                 tmpy = y - 1
                 tmpblock_id = ED.getBlock((x, tmpy, z)).id
-                while not any(block_type in tmpblock_id for block_type in (DECORATIVE_GROUND_BLOCKS + GROUND_BLOCKS)):
+                while not any(block_type in tmpblock_id for block_type in (DECORATIVE_GROUND_BLOCKS + GROUND_BLOCKS)) and tmpy > 3:
                     if tmpblock_id in ressources:
                         ressources[tmpblock_id] += 1
                     else:
