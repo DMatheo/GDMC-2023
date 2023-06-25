@@ -9,7 +9,10 @@ from settlements.Surface import Surface
 
 def main():
     try:
-        village = Surface("Village", (STARTX + 100, 30, STARTZ + 100), 20, (STARTX, STARTZ), (LASTX - STARTX, LASTZ - STARTZ))
+        centerX = (STARTX + LASTX) // 2
+        centerZ = (STARTZ + LASTZ) // 2
+        radius = 124
+        village = Surface("Village", (centerX, 30, centerZ), 20, (centerX - radius, centerZ - radius), (centerX + radius, centerZ + radius))
         village.settle()
 
     except KeyboardInterrupt: # useful for aborting a run-away program
